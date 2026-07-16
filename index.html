@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مساعد الخدمة السريع - المعاينة المستقلة</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Cairo', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[600px] border border-slate-200">
+    <!-- Header -->
+    <div class="p-4 text-white flex items-center gap-3" style="background-color: #3b82f6">
+      <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
+        مس
+      </div>
+      <div>
+        <h2 class="font-bold text-sm leading-tight">مساعد الخدمة السريع</h2>
+        <p class="text-[10px] text-white/80">نشط الآن • مستقل</p>
+      </div>
+    </div>
+    
+    <!-- Chat log -->
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+      <div class="flex flex-col max-w-[85%] self-start">
+        <div class="px-3 py-2 bg-white text-slate-800 border border-slate-100 rounded-2xl rounded-bl-none shadow-sm text-xs leading-relaxed text-right">
+          مرحباً بك! أنا مساعدك الذكي لخدمة العملاء ⚡. أنا هنا للإجابة على استفساراتك ومساعدتك فوراً. كيف يمكنني خدمتك اليوم؟
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggested questions -->
+    <div class="p-2 border-t border-slate-50 bg-white flex gap-1.5 overflow-x-auto">
+      
+        <button onclick="sendPreset('ما هي ساعات العمل الرسمية؟')" class="px-2.5 py-1 text-[10px] text-slate-600 border border-slate-200 hover:border-blue-400 bg-slate-50 rounded-full shrink-0">
+          ما هي ساعات العمل الرسمية؟
+        </button>
+      
+        <button onclick="sendPreset('كيف يمكنني التواصل مع الدعم الفني؟')" class="px-2.5 py-1 text-[10px] text-slate-600 border border-slate-200 hover:border-blue-400 bg-slate-50 rounded-full shrink-0">
+          كيف يمكنني التواصل مع الدعم الفني؟
+        </button>
+      
+        <button onclick="sendPreset('ما هي الخدمات التي تقدمونها؟')" class="px-2.5 py-1 text-[10px] text-slate-600 border border-slate-200 hover:border-blue-400 bg-slate-50 rounded-full shrink-0">
+          ما هي الخدمات التي تقدمونها؟
+        </button>
+      
+    </div>
+
+    <!-- Input footer -->
+    <div class="p-3 border-t border-slate-100 bg-white">
+      <div class="flex gap-2">
+        <input type="text" id="chat-input" placeholder="اكتب رسالتك..." class="flex-1 bg-slate-100 border border-slate-100 rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-right">
+        <button onclick="sendUserMessage()" class="p-2 text-white rounded-full flex items-center justify-center" style="background-color: #3b82f6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm-.707-1.55L1.816 6.857l12.314-4.926L5.929 8.52Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messagesContainer = document.getElementById('chat-messages');
+    const inputElement = document.getElementById('chat-input');
+    
+    // Key values from export config
+    const botPrompt = `أنت مساعد خدمة عملاء ذكي، سريع، ومحترف. نبرتك ودودة، واضحة، ومباشرة. مهمتك هي مساعدة العملاء والإجابة على استفساراتهم بسرعة. معلوماتك الأساسية:
+1. ساعات العمل: من الأحد إلى الخميس، من الساعة 9 صباحاً حتى 5 مساءً.
+2. للتواصل مع الدعم البشري: يرجى توجيه العميل لإرسال بريد إلكتروني إلى support@example.com أو ترك رقمه للتواصل.
+3. خدماتنا: نقدم حلولاً رقمية ذكية، استشارات تقنية، ودعم فني متكامل.
+أجب دائماً باختصار واجعل العميل يشعر بالترحيب والاهتمام.`;
+    const botName = "مساعد الخدمة السريع";
+
+    inputElement.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendUserMessage();
+    });
+
+    function appendMessage(text, sender) {
+      const bubble = document.createElement('div');
+      bubble.className = 'flex flex-col max-w-[85%] ' + (sender === 'user' ? 'self-end' : 'self-start');
+      
+      const content = document.createElement('div');
+      content.className = 'px-3 py-2 rounded-2xl text-xs leading-relaxed ' + 
+                        (sender === 'user' ? 'bg-slate-800 text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none shadow-sm');
+      if (sender === 'user') {
+        content.style.backgroundColor = '#3b82f6';
+      }
+      content.innerText = text;
+      bubble.appendChild(content);
+      messagesContainer.appendChild(bubble);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function sendPreset(text) {
+      appendMessage(text, 'user');
+      simulateResponse(text);
+    }
+
+    function sendUserMessage() {
+      const val = inputElement.value.trim();
+      if (!val) return;
+      appendMessage(val, 'user');
+      inputElement.value = '';
+      simulateResponse(val);
+    }
+
+    async function simulateResponse(userText) {
+      // Show thinking bubble
+      const thinking = document.createElement('div');
+      thinking.id = 'thinking-indicator';
+      thinking.className = 'flex gap-1 bg-white border border-slate-100 px-3 py-2 rounded-2xl rounded-bl-none shadow-sm max-w-[50px] self-start';
+      thinking.innerHTML = '<span class="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce"></span><span class="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:100ms"></span><span class="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:200ms"></span>';
+      messagesContainer.appendChild(thinking);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      try {
+        const response = await fetch('/api/run-bot-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ sender: 'user', text: userText }],
+            botPrompt: botPrompt,
+            botName: botName
+          })
+        });
+        const data = await response.json();
+        thinking.remove();
+        appendMessage(data.text || 'لا يمكنني الإجابة حالياً.', 'bot');
+      } catch (err) {
+        thinking.remove();
+        appendMessage('عذراً، فشل الاتصال بخادم المعالجة الذكية.', 'bot');
+      }
+    }
+  </script>
+</body>
+</html>
